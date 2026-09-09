@@ -7,7 +7,8 @@ import {
   TouchableOpacity, 
   StyleSheet, 
   Image,
-  Modal
+  Modal,
+  useWindowDimensions
 } from 'react-native';
 import { THEME } from '../../constants/theme';
 import { Ionicons } from '@expo/vector-icons';
@@ -36,6 +37,9 @@ export const ItineraryView: React.FC<ItineraryViewProps> = ({
   const [showSimulateModal, setShowSimulateModal] = useState(false);
   const [expandedStopIndex, setExpandedStopIndex] = useState<number | null>(null);
 
+  const { width } = useWindowDimensions();
+  const isDesktop = width >= 860;
+
   if (!itinerary) {
     return (
       <View style={styles.emptyContainer}>
@@ -52,215 +56,242 @@ export const ItineraryView: React.FC<ItineraryViewProps> = ({
     setExpandedStopIndex(expandedStopIndex === idx ? null : idx);
   };
 
-  return (
-    <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
-      {/* Replanning Banner if active */}
-      {activeDiff && (
-        <ReplanningBanner
-          diff={activeDiff}
-          onAccept={onAcceptDiff}
-          onDismiss={onDismissDiff}
-        />
-      )}
-
-      {/* Itinerary Header */}
-      <View style={styles.planHeaderCard}>
-        <View style={styles.planHeaderTop}>
-          <View>
-            <Text style={styles.planSuperTitle}>YOUR BHRAMAN PLAN</Text>
-            <Text style={styles.planHeadline}>
-              {itinerary.stops.length}-Stop Local Experience
-            </Text>
-            <Text style={styles.planBaseText}>
-              Base: {itinerary.baseLocation.name}
-            </Text>
-          </View>
-          <View style={[
-            styles.confidenceBadge, 
-            itinerary.confidence === 'High' ? styles.confidenceHigh : styles.confidenceModerate
-          ]}>
-            <Ionicons name="shield-checkmark" size={12} color="#FFF" />
-            <Text style={styles.confidenceBadgeText}>{itinerary.confidence} Confidence</Text>
-          </View>
+  const renderHeader = () => (
+    <View style={styles.planHeaderCard}>
+      <View style={styles.planHeaderTop}>
+        <View>
+          <Text style={styles.planSuperTitle}>YOUR BHRAMAN PLAN</Text>
+          <Text style={styles.planHeadline}>
+            {itinerary.stops.length}-Stop Local Experience
+          </Text>
+          <Text style={styles.planBaseText}>
+            Base: {itinerary.baseLocation.name}
+          </Text>
         </View>
-
-        {/* Key Metrics Grid */}
-        <View style={styles.metricsGrid}>
-          <View style={styles.metricCard}>
-            <Text style={styles.metricLabel}>Calculated Cost</Text>
-            <Text style={styles.metricValue}>₹{itinerary.totalCost.toLocaleString()}</Text>
-            <Text style={styles.metricSub}>Limit: ₹{itinerary.budgetLimit.toLocaleString()}</Text>
-          </View>
-
-          <View style={styles.metricCard}>
-            <Text style={styles.metricLabel}>Total Duration</Text>
-            <Text style={styles.metricValue}>
-              {Math.floor(itinerary.totalTimeMinutes / 60)}h {itinerary.totalTimeMinutes % 60}m
-            </Text>
-            <Text style={styles.metricSub}>{itinerary.startTime} - {itinerary.endTime}</Text>
-          </View>
-
-          <View style={[styles.metricCard, styles.bufferMetricCard]}>
-            <Text style={[styles.metricLabel, { color: THEME.colors.success }]}>Return Buffer</Text>
-            <Text style={[styles.metricValue, { color: THEME.colors.success }]}>
-              {itinerary.safetyBufferMinutes} min
-            </Text>
-            <Text style={styles.metricSub}>Guaranteed</Text>
-          </View>
-        </View>
-
-        {/* Confidence statement */}
-        <View style={styles.confidenceReasonBox}>
-          <Ionicons name="information-circle-outline" size={14} color={THEME.colors.textSecondary} />
-          <Text style={styles.confidenceReasonText}>{itinerary.confidenceReason}</Text>
+        <View style={[
+          styles.confidenceBadge, 
+          itinerary.confidence === 'High' ? styles.confidenceHigh : styles.confidenceModerate
+        ]}>
+          <Ionicons name="shield-checkmark" size={12} color="#FFF" />
+          <Text style={styles.confidenceBadgeText}>{itinerary.confidence} Confidence</Text>
         </View>
       </View>
 
-      {/* Action Bar */}
-      <View style={styles.actionButtonsRow}>
-        <TouchableOpacity
-          style={styles.simulateChangeBtn}
-          onPress={() => setShowSimulateModal(true)}
-          activeOpacity={0.8}
-        >
-          <Ionicons name="sparkles" size={16} color="#FFF" />
-          <Text style={styles.simulateChangeText}>Simulate Change</Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity style={styles.savePlanBtn} onPress={onSavePlan} activeOpacity={0.8}>
-          <Ionicons name="bookmark-outline" size={16} color={THEME.colors.primary} />
-          <Text style={styles.savePlanText}>Save Plan</Text>
-        </TouchableOpacity>
-      </View>
-
-      {/* Timeline Section */}
-      <View style={styles.timelineSection}>
-        <Text style={styles.timelineSectionTitle}>TIMELINE & STOPS</Text>
-
-        {/* Start Point */}
-        <View style={styles.timelineNode}>
-          <View style={styles.nodeIconCol}>
-            <View style={styles.nodeCircleBase}>
-              <Ionicons name="business" size={12} color="#FFF" />
-            </View>
-            <View style={styles.nodeLine} />
-          </View>
-          <View style={styles.nodeContent}>
-            <Text style={styles.nodeTimeText}>{itinerary.startTime}</Text>
-            <Text style={styles.nodeTitleText}>Depart Base: {itinerary.baseLocation.name}</Text>
-            <Text style={styles.nodeSubtitleText}>Mode: {itinerary.transportMode.toUpperCase()}</Text>
-          </View>
+      {/* Key Metrics Grid */}
+      <View style={styles.metricsGrid}>
+        <View style={styles.metricCard}>
+          <Text style={styles.metricLabel}>Calculated Cost</Text>
+          <Text style={styles.metricValue}>₹{itinerary.totalCost.toLocaleString()}</Text>
+          <Text style={styles.metricSub}>Limit: ₹{itinerary.budgetLimit.toLocaleString()}</Text>
         </View>
 
-        {/* Stops */}
-        {itinerary.stops.map((stop) => {
-          const isExpanded = expandedStopIndex === stop.stopIndex;
-          return (
-            <View key={stop.stopIndex} style={styles.timelineNode}>
-              {/* Vertical line & Marker */}
-              <View style={styles.nodeIconCol}>
-                <View style={styles.nodeCircleStop}>
-                  <Text style={styles.nodeStopNum}>{stop.stopIndex}</Text>
-                </View>
-                <View style={styles.nodeLine} />
+        <View style={styles.metricCard}>
+          <Text style={styles.metricLabel}>Total Duration</Text>
+          <Text style={styles.metricValue}>
+            {Math.floor(itinerary.totalTimeMinutes / 60)}h {itinerary.totalTimeMinutes % 60}m
+          </Text>
+          <Text style={styles.metricSub}>{itinerary.startTime} - {itinerary.endTime}</Text>
+        </View>
+
+        <View style={[styles.metricCard, styles.bufferMetricCard]}>
+          <Text style={[styles.metricLabel, { color: THEME.colors.success }]}>Return Buffer</Text>
+          <Text style={[styles.metricValue, { color: THEME.colors.success }]}>
+            {itinerary.safetyBufferMinutes} min
+          </Text>
+          <Text style={styles.metricSub}>Guaranteed</Text>
+        </View>
+      </View>
+
+      {/* Confidence statement */}
+      <View style={styles.confidenceReasonBox}>
+        <Ionicons name="information-circle-outline" size={14} color={THEME.colors.textSecondary} />
+        <Text style={styles.confidenceReasonText}>{itinerary.confidenceReason}</Text>
+      </View>
+    </View>
+  );
+
+  const renderActionBar = () => (
+    <View style={styles.actionButtonsRow}>
+      <TouchableOpacity
+        style={styles.simulateChangeBtn}
+        onPress={() => setShowSimulateModal(true)}
+        activeOpacity={0.8}
+      >
+        <Ionicons name="sparkles" size={16} color="#FFF" />
+        <Text style={styles.simulateChangeText}>Simulate Change</Text>
+      </TouchableOpacity>
+
+      <TouchableOpacity style={styles.savePlanBtn} onPress={onSavePlan} activeOpacity={0.8}>
+        <Ionicons name="bookmark-outline" size={16} color={THEME.colors.primary} />
+        <Text style={styles.savePlanText}>Save Plan</Text>
+      </TouchableOpacity>
+    </View>
+  );
+
+  const renderTimeline = () => (
+    <View style={styles.timelineSection}>
+      <Text style={styles.timelineSectionTitle}>TIMELINE & STOPS</Text>
+
+      {/* Start Point */}
+      <View style={styles.timelineNode}>
+        <View style={styles.nodeIconCol}>
+          <View style={styles.nodeCircleBase}>
+            <Ionicons name="business" size={12} color="#FFF" />
+          </View>
+          <View style={styles.nodeLine} />
+        </View>
+        <View style={styles.nodeContent}>
+          <Text style={styles.nodeTimeText}>{itinerary.startTime}</Text>
+          <Text style={styles.nodeTitleText}>Depart Base: {itinerary.baseLocation.name}</Text>
+          <Text style={styles.nodeSubtitleText}>Mode: {itinerary.transportMode.toUpperCase()}</Text>
+        </View>
+      </View>
+
+      {/* Stops */}
+      {itinerary.stops.map((stop) => {
+        const isExpanded = expandedStopIndex === stop.stopIndex;
+        return (
+          <View key={stop.stopIndex} style={styles.timelineNode}>
+            {/* Vertical line & Marker */}
+            <View style={styles.nodeIconCol}>
+              <View style={styles.nodeCircleStop}>
+                <Text style={styles.nodeStopNum}>{stop.stopIndex}</Text>
               </View>
+              <View style={styles.nodeLine} />
+            </View>
 
-              {/* Stop Card */}
-              <View style={styles.stopCard}>
-                <View style={styles.stopCardHeader}>
-                  <View style={styles.stopInfoGroup}>
-                    <View style={styles.badgeRow}>
-                      <View style={styles.categoryPill}>
-                        <Text style={styles.categoryPillText}>{stop.place.category.toUpperCase()}</Text>
-                      </View>
-                      <Text style={styles.travelLegTime}>
-                        +{stop.travelTimeMinutes}m travel (₹{stop.travelCost})
-                      </Text>
+            {/* Stop Card */}
+            <View style={styles.stopCard}>
+              <View style={styles.stopCardHeader}>
+                <View style={styles.stopInfoGroup}>
+                  <View style={styles.badgeRow}>
+                    <View style={styles.categoryPill}>
+                      <Text style={styles.categoryPillText}>{stop.place.category.toUpperCase()}</Text>
                     </View>
-                    <Text style={styles.stopName}>{stop.place.name}</Text>
-                    <Text style={styles.stopTiming}>
-                      {stop.arrivalTime} - {stop.departureTime} ({stop.activityDurationMinutes}m stay)
+                    <Text style={styles.travelLegTime}>
+                      +{stop.travelTimeMinutes}m travel (₹{stop.travelCost})
                     </Text>
                   </View>
-
-                  <TouchableOpacity
-                    style={styles.expandToggle}
-                    onPress={() => toggleExpand(stop.stopIndex)}
-                  >
-                    <Ionicons
-                      name={isExpanded ? "chevron-up" : "chevron-down"}
-                      size={18}
-                      color={THEME.colors.textMuted}
-                    />
-                  </TouchableOpacity>
+                  <Text style={styles.stopName}>{stop.place.name}</Text>
+                  <Text style={styles.stopTiming}>
+                    {stop.arrivalTime} - {stop.departureTime} ({stop.activityDurationMinutes}m stay)
+                  </Text>
                 </View>
 
-                {/* Why Bhraman picked this */}
-                <View style={styles.whyBox}>
-                  <View style={styles.whyHeader}>
-                    <Ionicons name="bulb-outline" size={12} color={THEME.colors.accent} />
-                    <Text style={styles.whyLabel}>Why Bhraman picked this:</Text>
-                  </View>
-                  <Text style={styles.whyText}>{stop.whyChosen}</Text>
-                </View>
-
-                {/* Expanded Details */}
-                {isExpanded && (
-                  <View style={styles.expandedSection}>
-                    <Text style={styles.placeDesc}>{stop.place.description}</Text>
-                    <View style={styles.scoreDetailsRow}>
-                      <Text style={styles.scoreDetailItem}>
-                        Match: {stop.scoreBreakdown.preferenceMatch}/30
-                      </Text>
-                      <Text style={styles.scoreDetailItem}>
-                        Feasibility: {stop.scoreBreakdown.feasibility}/20
-                      </Text>
-                      <Text style={styles.scoreDetailItem}>
-                        Efficiency: {stop.scoreBreakdown.travelEfficiency}/15
-                      </Text>
-                      <Text style={styles.scoreDetailItem}>
-                        Trust: {stop.scoreBreakdown.communityTrust}/10
-                      </Text>
-                    </View>
-                    <View style={styles.costBreakdownRow}>
-                      <Text style={styles.costText}>
-                        Activity: ₹{stop.activityCost} (₹{stop.place.averageCostPerPerson}/person)
-                      </Text>
-                      <Text style={styles.costText}>Transit: ₹{stop.travelCost}</Text>
-                    </View>
-                  </View>
-                )}
+                <TouchableOpacity
+                  style={styles.expandToggle}
+                  onPress={() => toggleExpand(stop.stopIndex)}
+                >
+                  <Ionicons
+                    name={isExpanded ? "chevron-up" : "chevron-down"}
+                    size={18}
+                    color={THEME.colors.textMuted}
+                  />
+                </TouchableOpacity>
               </View>
-            </View>
-          );
-        })}
 
-        {/* Return Leg */}
-        <View style={styles.timelineNode}>
-          <View style={styles.nodeIconCol}>
-            <View style={styles.nodeCircleReturn}>
-              <Ionicons name="home" size={12} color="#FFF" />
+              {/* Why Bhraman picked this */}
+              <View style={styles.whyBox}>
+                <View style={styles.whyHeader}>
+                  <Ionicons name="bulb-outline" size={12} color={THEME.colors.accent} />
+                  <Text style={styles.whyLabel}>Why Bhraman picked this:</Text>
+                </View>
+                <Text style={styles.whyText}>{stop.whyChosen}</Text>
+              </View>
+
+              {/* Expanded Details */}
+              {isExpanded && (
+                <View style={styles.expandedSection}>
+                  <Text style={styles.placeDesc}>{stop.place.description}</Text>
+                  <View style={styles.scoreDetailsRow}>
+                    <Text style={styles.scoreDetailItem}>
+                      Match: {stop.scoreBreakdown.preferenceMatch}/30
+                    </Text>
+                    <Text style={styles.scoreDetailItem}>
+                      Feasibility: {stop.scoreBreakdown.feasibility}/20
+                    </Text>
+                    <Text style={styles.scoreDetailItem}>
+                      Efficiency: {stop.scoreBreakdown.travelEfficiency}/15
+                    </Text>
+                    <Text style={styles.scoreDetailItem}>
+                      Trust: {stop.scoreBreakdown.communityTrust}/10
+                    </Text>
+                  </View>
+                  <View style={styles.costBreakdownRow}>
+                    <Text style={styles.costText}>
+                      Activity: ₹{stop.activityCost} (₹{stop.place.averageCostPerPerson}/person)
+                    </Text>
+                    <Text style={styles.costText}>Transit: ₹{stop.travelCost}</Text>
+                  </View>
+                </View>
+              )}
             </View>
           </View>
-          <View style={styles.nodeContent}>
-            <Text style={styles.nodeTimeText}>{itinerary.endTime}</Text>
-            <Text style={styles.nodeTitleText}>
-              Return to Base ({itinerary.returnTravelMinutes}m transit, ₹{itinerary.returnTravelCost})
-            </Text>
-            <View style={styles.bufferGuaranteeTag}>
-              <Ionicons name="checkmark-circle" size={12} color={THEME.colors.success} />
-              <Text style={styles.bufferGuaranteeText}>
-                {itinerary.safetyBufferMinutes}-Minute Return Buffer Preserved
-              </Text>
-            </View>
+        );
+      })}
+
+      {/* Return Leg */}
+      <View style={styles.timelineNode}>
+        <View style={styles.nodeIconCol}>
+          <View style={styles.nodeCircleReturn}>
+            <Ionicons name="home" size={12} color="#FFF" />
           </View>
         </View>
+        <View style={styles.nodeContent}>
+          <Text style={styles.nodeTimeText}>{itinerary.endTime}</Text>
+          <Text style={styles.nodeTitleText}>
+            Return to Base ({itinerary.returnTravelMinutes}m transit, ₹{itinerary.returnTravelCost})
+          </Text>
+          <View style={styles.bufferGuaranteeTag}>
+            <Ionicons name="checkmark-circle" size={12} color={THEME.colors.success} />
+            <Text style={styles.bufferGuaranteeText}>
+              {itinerary.safetyBufferMinutes}-Minute Return Buffer Preserved
+            </Text>
+          </View>
+        </View>
+      </View>
+    </View>
+  );
+
+  return (
+    <ScrollView 
+      style={styles.container} 
+      contentContainerStyle={isDesktop ? styles.desktopScrollContent : undefined}
+      showsVerticalScrollIndicator={false}
+    >
+      <View style={isDesktop ? styles.desktopWrapper : undefined}>
+        {/* Replanning Banner if active */}
+        {activeDiff && (
+          <ReplanningBanner
+            diff={activeDiff}
+            onAccept={onAcceptDiff}
+            onDismiss={onDismissDiff}
+          />
+        )}
+
+        {isDesktop ? (
+          <View style={styles.desktopColumns}>
+            <View style={styles.leftColumn}>
+              {renderTimeline()}
+            </View>
+            <View style={styles.rightColumn}>
+              {renderHeader()}
+              {renderActionBar()}
+            </View>
+          </View>
+        ) : (
+          <>
+            {renderHeader()}
+            {renderActionBar()}
+            {renderTimeline()}
+          </>
+        )}
       </View>
 
       {/* Simulate Change Modal */}
       <Modal visible={showSimulateModal} animationType="slide" transparent>
-        <View style={styles.modalOverlay}>
-          <View style={styles.modalContent}>
+        <View style={[styles.modalOverlay, isDesktop && styles.modalOverlayDesktop]}>
+          <View style={[styles.modalContent, isDesktop && styles.modalContentDesktop]}>
             <View style={styles.modalHeader}>
               <Text style={styles.modalTitle}>⚡ Simulate Local Change (PS6)</Text>
               <TouchableOpacity onPress={() => setShowSimulateModal(false)}>
@@ -357,6 +388,27 @@ const styles = StyleSheet.create({
     backgroundColor: THEME.colors.background,
     paddingHorizontal: THEME.spacing.md,
     paddingTop: THEME.spacing.sm,
+  },
+  desktopScrollContent: {
+    alignItems: 'center',
+    paddingVertical: THEME.spacing.md,
+  },
+  desktopWrapper: {
+    maxWidth: 1280,
+    width: '100%',
+    alignSelf: 'center',
+  },
+  desktopColumns: {
+    flexDirection: 'row',
+    gap: 24,
+    alignItems: 'flex-start',
+    width: '100%',
+  },
+  leftColumn: {
+    flex: 6,
+  },
+  rightColumn: {
+    flex: 4,
   },
   emptyContainer: {
     flex: 1,
@@ -707,12 +759,23 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(0, 0, 0, 0.75)',
     justifyContent: 'flex-end',
   },
+  modalOverlayDesktop: {
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 24,
+  },
   modalContent: {
     backgroundColor: THEME.colors.surface,
     borderTopLeftRadius: 20,
     borderTopRightRadius: 20,
     padding: THEME.spacing.lg,
     paddingBottom: 40,
+  },
+  modalContentDesktop: {
+    maxWidth: 540,
+    width: '100%',
+    borderRadius: 20,
+    paddingBottom: THEME.spacing.lg,
   },
   modalHeader: {
     flexDirection: 'row',

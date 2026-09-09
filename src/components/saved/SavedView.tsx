@@ -1,4 +1,3 @@
-// Bhraman - Real Persistent Saved Screen (Places, Discoveries, Plans, Communities, Events)
 import React, { useState } from 'react';
 import { 
   View, 
@@ -7,7 +6,8 @@ import {
   TouchableOpacity, 
   StyleSheet, 
   Image, 
-  Alert 
+  Alert,
+  useWindowDimensions 
 } from 'react-native';
 import { THEME } from '../../constants/theme';
 import { Ionicons } from '@expo/vector-icons';
@@ -24,6 +24,9 @@ export const SavedView: React.FC<SavedViewProps> = ({
   onLoadSavedPlan,
   onExplorePlace,
 }) => {
+  const { width } = useWindowDimensions();
+  const isDesktop = width >= 860;
+
   const { 
     savedState, 
     toggleSave, 
@@ -46,8 +49,8 @@ export const SavedView: React.FC<SavedViewProps> = ({
   return (
     <View style={styles.container}>
       {/* Sub Tab Navigation */}
-      <View style={styles.subNavBar}>
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.subNavScroll}>
+      <View style={[styles.subNavBar, isDesktop && { alignItems: 'center' }]}>
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={[styles.subNavScroll, isDesktop && { maxWidth: 1280, width: '100%', justifyContent: 'center' }]}>
           <TouchableOpacity
             style={[styles.subNavItem, activeTab === 'plans' && styles.subNavItemActive]}
             onPress={() => setActiveTab('plans')}
@@ -95,7 +98,12 @@ export const SavedView: React.FC<SavedViewProps> = ({
         </ScrollView>
       </View>
 
-      <ScrollView style={styles.scrollArea} showsVerticalScrollIndicator={false}>
+      <ScrollView 
+        style={styles.scrollArea} 
+        contentContainerStyle={isDesktop ? styles.desktopScrollContent : undefined}
+        showsVerticalScrollIndicator={false}
+      >
+        <View style={isDesktop ? styles.desktopWrapper : undefined}>
         {/* 1. SAVED PLANS */}
         {activeTab === 'plans' && (
           <View>
@@ -108,8 +116,9 @@ export const SavedView: React.FC<SavedViewProps> = ({
                 </Text>
               </View>
             ) : (
-              savedState.itineraries.map((plan, idx) => (
-                <View key={plan.id || idx} style={styles.planCard}>
+              <View style={isDesktop ? styles.gridContainer : undefined}>
+              {savedState.itineraries.map((plan, idx) => (
+                <View key={plan.id || idx} style={[styles.planCard, isDesktop && styles.cardDesktop]}>
                   <View style={styles.planCardHeader}>
                     <View>
                       <Text style={styles.planCardSuper}>SAVED ITINERARY</Text>
@@ -152,7 +161,8 @@ export const SavedView: React.FC<SavedViewProps> = ({
                     <Ionicons name="arrow-forward" size={14} color="#FFF" />
                   </TouchableOpacity>
                 </View>
-              ))
+              ))}
+              </View>
             )}
           </View>
         )}
@@ -167,10 +177,11 @@ export const SavedView: React.FC<SavedViewProps> = ({
                 <Text style={styles.emptySub}>Bookmark heritage spots, cafes, and viewpoints from Explore.</Text>
               </View>
             ) : (
-              savedPlaces.map(place => (
+              <View style={isDesktop ? styles.gridContainer : undefined}>
+              {savedPlaces.map(place => (
                 <TouchableOpacity
                   key={place.id}
-                  style={styles.itemCard}
+                  style={[styles.itemCard, isDesktop && styles.cardDesktop]}
                   onPress={() => onExplorePlace(place)}
                   activeOpacity={0.8}
                 >
@@ -194,7 +205,8 @@ export const SavedView: React.FC<SavedViewProps> = ({
                     <Text style={styles.itemCost}>~₹{place.averageCostPerPerson}/person • ★ {place.rating}</Text>
                   </View>
                 </TouchableOpacity>
-              ))
+              ))}
+              </View>
             )}
           </View>
         )}
@@ -209,8 +221,9 @@ export const SavedView: React.FC<SavedViewProps> = ({
                 <Text style={styles.emptySub}>Save secret lanes and community finds from the Community feed.</Text>
               </View>
             ) : (
-              savedDiscoveries.map(disc => (
-                <View key={disc.id} style={styles.itemCard}>
+              <View style={isDesktop ? styles.gridContainer : undefined}>
+              {savedDiscoveries.map(disc => (
+                <View key={disc.id} style={[styles.itemCard, isDesktop && styles.cardDesktop]}>
                   <Image source={{ uri: disc.imageUrl }} style={styles.itemImg} />
                   <View style={styles.itemInfo}>
                     <View style={styles.itemHeaderRow}>
@@ -230,7 +243,8 @@ export const SavedView: React.FC<SavedViewProps> = ({
                     <Text style={styles.itemDesc} numberOfLines={2}>{disc.description}</Text>
                   </View>
                 </View>
-              ))
+              ))}
+              </View>
             )}
           </View>
         )}
@@ -245,8 +259,9 @@ export const SavedView: React.FC<SavedViewProps> = ({
                 <Text style={styles.emptySub}>Join local groups and bookmark communities to explore with locals.</Text>
               </View>
             ) : (
-              savedCommunities.map(comm => (
-                <View key={comm.id} style={styles.itemCard}>
+              <View style={isDesktop ? styles.gridContainer : undefined}>
+              {savedCommunities.map(comm => (
+                <View key={comm.id} style={[styles.itemCard, isDesktop && styles.cardDesktop]}>
                   <Image source={{ uri: comm.coverImage }} style={styles.itemImg} />
                   <View style={styles.itemInfo}>
                     <View style={styles.itemHeaderRow}>
@@ -266,7 +281,8 @@ export const SavedView: React.FC<SavedViewProps> = ({
                     <Text style={styles.itemCost}>{comm.membersCount} explorers • {(comm.primaryLanguage || 'en').toUpperCase()}</Text>
                   </View>
                 </View>
-              ))
+              ))}
+              </View>
             )}
           </View>
         )}
@@ -281,8 +297,9 @@ export const SavedView: React.FC<SavedViewProps> = ({
                 <Text style={styles.emptySub}>Request to join community exploration walks to track them here.</Text>
               </View>
             ) : (
-              savedEvents.map(evt => (
-                <View key={evt.id} style={styles.eventCard}>
+              <View style={isDesktop ? styles.gridContainer : undefined}>
+              {savedEvents.map(evt => (
+                <View key={evt.id} style={[styles.eventCard, isDesktop && styles.cardDesktop]}>
                   <View style={styles.eventCardHeader}>
                     <View style={{ flexDirection: 'row', gap: 6, alignItems: 'center' }}>
                       <View style={styles.eventRsvpBadge}>
@@ -302,10 +319,12 @@ export const SavedView: React.FC<SavedViewProps> = ({
                   <Text style={styles.eventCardMeeting}>📍 {evt.meetingPoint}</Text>
                   <Text style={styles.eventCardHost}>Host: {evt.hostName}</Text>
                 </View>
-              ))
+              ))}
+              </View>
             )}
           </View>
         )}
+        </View>
 
         <View style={{ height: 60 }} />
       </ScrollView>
@@ -353,6 +372,25 @@ const styles = StyleSheet.create({
     flex: 1,
     paddingHorizontal: THEME.spacing.md,
     paddingTop: THEME.spacing.sm,
+  },
+  desktopScrollContent: {
+    alignItems: 'center',
+    paddingVertical: THEME.spacing.md,
+  },
+  desktopWrapper: {
+    maxWidth: 1280,
+    width: '100%',
+    alignSelf: 'center',
+  },
+  gridContainer: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 16,
+    width: '100%',
+  },
+  cardDesktop: {
+    width: '48.8%',
+    marginBottom: 0,
   },
   emptyStateBox: {
     alignItems: 'center',

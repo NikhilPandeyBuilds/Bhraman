@@ -8,7 +8,8 @@ import {
   StyleSheet, 
   Image, 
   TextInput,
-  Alert 
+  Alert,
+  useWindowDimensions
 } from 'react-native';
 import { THEME } from '../../constants/theme';
 import { Ionicons } from '@expo/vector-icons';
@@ -41,6 +42,9 @@ export const CommunityView: React.FC<CommunityViewProps> = ({
     toggleFollowCreator
   } = useApp();
 
+  const { width } = useWindowDimensions();
+  const isDesktop = width >= 860;
+
   const [activeSection, setActiveSection] = useState<'feed' | 'communities' | 'creators'>('feed');
   const [translatedMap, setTranslatedMap] = useState<Record<string, boolean>>({});
   const [communitySearch, setCommunitySearch] = useState('');
@@ -66,77 +70,79 @@ export const CommunityView: React.FC<CommunityViewProps> = ({
 
   return (
     <View style={styles.container}>
-      {/* Action Header & Sub-Nav Switcher */}
-      <View style={styles.topActionBar}>
-        <View style={styles.subNavBar}>
-          <TouchableOpacity
-            style={[styles.subNavItem, activeSection === 'feed' && styles.subNavItemActive]}
-            onPress={() => setActiveSection('feed')}
-          >
-            <Text style={[styles.subNavText, activeSection === 'feed' && styles.subNavTextActive]}>
-              Discoveries ({discoveries.length})
-            </Text>
-          </TouchableOpacity>
+      <View style={styles.innerContainer}>
+        {/* Action Header & Sub-Nav Switcher */}
+        <View style={styles.topActionBar}>
+          <View style={styles.subNavBar}>
+            <TouchableOpacity
+              style={[styles.subNavItem, activeSection === 'feed' && styles.subNavItemActive]}
+              onPress={() => setActiveSection('feed')}
+            >
+              <Text style={[styles.subNavText, activeSection === 'feed' && styles.subNavTextActive]}>
+                Discoveries ({discoveries.length})
+              </Text>
+            </TouchableOpacity>
 
-          <TouchableOpacity
-            style={[styles.subNavItem, activeSection === 'communities' && styles.subNavItemActive]}
-            onPress={() => setActiveSection('communities')}
-          >
-            <Text style={[styles.subNavText, activeSection === 'communities' && styles.subNavTextActive]}>
-              Communities ({communities.length})
-            </Text>
-          </TouchableOpacity>
+            <TouchableOpacity
+              style={[styles.subNavItem, activeSection === 'communities' && styles.subNavItemActive]}
+              onPress={() => setActiveSection('communities')}
+            >
+              <Text style={[styles.subNavText, activeSection === 'communities' && styles.subNavTextActive]}>
+                Communities ({communities.length})
+              </Text>
+            </TouchableOpacity>
 
-          <TouchableOpacity
-            style={[styles.subNavItem, activeSection === 'creators' && styles.subNavItemActive]}
-            onPress={() => setActiveSection('creators')}
-          >
-            <Text style={[styles.subNavText, activeSection === 'creators' && styles.subNavTextActive]}>
-              Creators
-            </Text>
-          </TouchableOpacity>
+            <TouchableOpacity
+              style={[styles.subNavItem, activeSection === 'creators' && styles.subNavItemActive]}
+              onPress={() => setActiveSection('creators')}
+            >
+              <Text style={[styles.subNavText, activeSection === 'creators' && styles.subNavTextActive]}>
+                Creators
+              </Text>
+            </TouchableOpacity>
+          </View>
+
+          {/* Action Buttons to Share / Create */}
+          <View style={styles.actionButtonsRow}>
+            <TouchableOpacity
+              style={styles.actionPillBtn}
+              onPress={onOpenShareDiscovery}
+              activeOpacity={0.8}
+            >
+              <Ionicons name="add-circle" size={14} color="#FFF" />
+              <Text style={styles.actionPillText}>+ Share Discovery</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={[styles.actionPillBtn, { backgroundColor: THEME.colors.secondary }]}
+              onPress={onOpenCreateCommunity}
+              activeOpacity={0.8}
+            >
+              <Ionicons name="people" size={14} color="#FFF" />
+              <Text style={styles.actionPillText}>+ Create Community</Text>
+            </TouchableOpacity>
+          </View>
         </View>
 
-        {/* Action Buttons to Share / Create */}
-        <View style={styles.actionButtonsRow}>
-          <TouchableOpacity
-            style={styles.actionPillBtn}
-            onPress={onOpenShareDiscovery}
-            activeOpacity={0.8}
-          >
-            <Ionicons name="add-circle" size={14} color="#FFF" />
-            <Text style={styles.actionPillText}>+ Share Discovery</Text>
-          </TouchableOpacity>
+        <ScrollView style={styles.scrollArea} showsVerticalScrollIndicator={false}>
+          {/* 1. LOCAL DISCOVERIES FEED */}
+          {activeSection === 'feed' && (
+            <View style={styles.feedSection}>
+              <Text style={styles.feedHeaderNote}>
+                Raw local discoveries posted by Mumbai residents. Tap "Translate" to read in your language.
+              </Text>
 
-          <TouchableOpacity
-            style={[styles.actionPillBtn, { backgroundColor: THEME.colors.secondary }]}
-            onPress={onOpenCreateCommunity}
-            activeOpacity={0.8}
-          >
-            <Ionicons name="people" size={14} color="#FFF" />
-            <Text style={styles.actionPillText}>+ Create Community</Text>
-          </TouchableOpacity>
-        </View>
-      </View>
+              <View style={[styles.gridContainer, isDesktop && styles.gridContainerDesktop]}>
+                {discoveries.map(discovery => {
+                  const isLiked = !!likedMap[discovery.id];
+                  const isSaved = savedState.discoveryIds.includes(discovery.id);
+                  const isTranslated = !!translatedMap[discovery.id];
+                  const displayDesc = isTranslated
+                    ? translateText(discovery.description, discovery.originalLanguage || 'en')
+                    : discovery.description;
 
-      <ScrollView style={styles.scrollArea} showsVerticalScrollIndicator={false}>
-        {/* 1. LOCAL DISCOVERIES FEED */}
-        {activeSection === 'feed' && (
-          <View style={styles.feedSection}>
-            <Text style={styles.feedHeaderNote}>
-              Raw local discoveries posted by Mumbai residents. Tap "Translate" to read in your language.
-            </Text>
-
-            {discoveries.map(discovery => {
-              const isLiked = !!likedMap[discovery.id];
-              const isSaved = savedState.discoveryIds.includes(discovery.id);
-              const isTranslated = !!translatedMap[discovery.id];
-              const displayDesc = isTranslated
-                ? translateText(discovery.description, discovery.originalLanguage || 'en')
-                : discovery.description;
-
-              return (
-                <View key={discovery.id} style={styles.discoveryCard}>
+                  return (
+                    <View key={discovery.id} style={[styles.discoveryCard, isDesktop && styles.desktopGridCard]}>
                   {/* Creator Header */}
                   <View style={styles.discoveryCardHeader}>
                     <View style={styles.creatorMetaRow}>
@@ -246,6 +252,7 @@ export const CommunityView: React.FC<CommunityViewProps> = ({
                 </View>
               );
             })}
+            </View>
           </View>
         )}
 
@@ -279,13 +286,14 @@ export const CommunityView: React.FC<CommunityViewProps> = ({
               ))}
             </ScrollView>
 
+            <View style={[styles.gridContainer, isDesktop && styles.gridContainerDesktop]}>
             {filteredCommunities.map(comm => {
               const isJoined = joinedCommunityIds.includes(comm.id);
               const hasEvent = !!comm.upcomingEvent;
               const isRsvpd = hasEvent && userRsvps.includes(comm.upcomingEvent!.id);
 
               return (
-                <View key={comm.id} style={styles.communityCard}>
+                <View key={comm.id} style={[styles.communityCard, isDesktop && styles.desktopGridCard]}>
                   <Image source={{ uri: comm.coverImage }} style={styles.commCover} />
                   <View style={styles.commDetails}>
                     <View style={styles.commHeaderRow}>
@@ -364,6 +372,7 @@ export const CommunityView: React.FC<CommunityViewProps> = ({
                 </View>
               );
             })}
+            </View>
           </View>
         )}
 
@@ -374,10 +383,11 @@ export const CommunityView: React.FC<CommunityViewProps> = ({
               Any local explorer can become a creator by contributing discoveries and guiding communities.
             </Text>
 
+            <View style={[styles.gridContainer, isDesktop && styles.gridContainerDesktop]}>
             {DEMO_CREATORS.map(creator => {
               const isFollowed = followedCreatorIds.includes(creator.id);
               return (
-                <View key={creator.id} style={styles.creatorCard}>
+                <View key={creator.id} style={[styles.creatorCard, isDesktop && styles.desktopGridCard]}>
                   <View style={styles.creatorHeader}>
                     <Image source={{ uri: creator.avatarUrl }} style={styles.creatorAvatar} />
                     <View style={styles.creatorMainInfo}>
@@ -427,16 +437,37 @@ export const CommunityView: React.FC<CommunityViewProps> = ({
                 </View>
               );
             })}
+            </View>
           </View>
         )}
 
         <View style={{ height: 60 }} />
       </ScrollView>
+      </View>
     </View>
   );
 };
 
 const styles = StyleSheet.create({
+  innerContainer: {
+    width: '100%',
+    maxWidth: 1360,
+    alignSelf: 'center',
+    flex: 1,
+  },
+  gridContainer: {
+    width: '100%',
+  },
+  gridContainerDesktop: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 16,
+    justifyContent: 'flex-start',
+  },
+  desktopGridCard: {
+    width: '48.8%',
+    minWidth: 350,
+  },
   container: {
     flex: 1,
     backgroundColor: THEME.colors.background,

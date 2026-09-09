@@ -8,7 +8,8 @@ import {
   StyleSheet, 
   Modal, 
   ScrollView, 
-  Image 
+  Image,
+  useWindowDimensions 
 } from 'react-native';
 import { THEME } from '../../constants/theme';
 import { Ionicons } from '@expo/vector-icons';
@@ -32,6 +33,9 @@ export const UnifiedSearchModal: React.FC<UnifiedSearchModalProps> = ({
   onSelectCommunity,
   onSelectDiscovery,
 }) => {
+  const { width } = useWindowDimensions();
+  const isDesktop = width >= 860;
+
   const { discoveries, communities, constraints, toggleSave, savedState } = useApp();
   const [query, setQuery] = useState('');
   const [activeFilter, setActiveFilter] = useState<'all' | 'places' | 'discoveries' | 'communities' | 'creators' | 'events'>('all');
@@ -139,8 +143,8 @@ export const UnifiedSearchModal: React.FC<UnifiedSearchModalProps> = ({
 
   return (
     <Modal visible={visible} animationType="slide" transparent onRequestClose={onClose}>
-      <View style={styles.modalOverlay}>
-        <View style={styles.modalCard}>
+      <View style={[styles.modalOverlay, isDesktop && styles.modalOverlayDesktop]}>
+        <View style={[styles.modalCard, isDesktop && styles.modalCardDesktop]}>
           {/* Header with Search Bar */}
           <View style={styles.searchHeader}>
             <View style={styles.searchInputRow}>
@@ -282,6 +286,11 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(0, 0, 0, 0.75)',
     justifyContent: 'flex-end',
   },
+  modalOverlayDesktop: {
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 24,
+  },
   modalCard: {
     backgroundColor: THEME.colors.surface,
     borderTopLeftRadius: 24,
@@ -290,6 +299,14 @@ const styles = StyleSheet.create({
     paddingBottom: 20,
     borderTopWidth: 1,
     borderTopColor: THEME.colors.surfaceBorder,
+  },
+  modalCardDesktop: {
+    maxWidth: 760,
+    width: '100%',
+    height: '85%',
+    borderRadius: 24,
+    borderWidth: 1,
+    borderColor: THEME.colors.surfaceBorder,
   },
   searchHeader: {
     flexDirection: 'row',

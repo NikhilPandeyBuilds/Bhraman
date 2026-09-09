@@ -3,7 +3,7 @@
 // From Places -> To Plans | Discover Beyond the Obvious
 
 import React, { useState } from 'react';
-import { StyleSheet, SafeAreaView, View, StatusBar, Alert, Modal, Text, TouchableOpacity } from 'react-native';
+import { StyleSheet, SafeAreaView, View, StatusBar, Alert, Modal, Text, TouchableOpacity, useWindowDimensions } from 'react-native';
 import { THEME } from './src/constants/theme';
 import { HeaderBar } from './src/components/common/HeaderBar';
 import { BottomTabBar, TabScreen } from './src/components/common/BottomTabBar';
@@ -26,6 +26,9 @@ import { Ionicons } from '@expo/vector-icons';
 import { Place, LocalDiscovery, Community } from './src/types';
 
 function BhramanAppContent() {
+  const { width } = useWindowDimensions();
+  const isDesktop = width >= 860;
+
   const {
     constraints,
     setConstraints,
@@ -75,12 +78,16 @@ function BhramanAppContent() {
       <SafeAreaView style={styles.safeArea}>
         <StatusBar barStyle="light-content" backgroundColor={THEME.colors.background} />
 
-        {/* Global Header Bar */}
+        {/* Global Header Bar (Includes Desktop Navigation when on wide screen) */}
         <HeaderBar
           traffic={trafficCondition}
           weather={weatherCondition}
           onOpenDemoDock={() => setIsDemoDockOpen(!isDemoDockOpen)}
           isDemoDockOpen={isDemoDockOpen}
+          activeTab={activeTab}
+          onSelectTab={setActiveTab}
+          hasActivePlan={!!activeItinerary}
+          onOpenSearch={() => setIsSearchModalOpen(true)}
         />
 
         {/* Floating / Collapsible Hackathon Demo Dock */}
@@ -180,8 +187,8 @@ function BhramanAppContent() {
           )}
         </View>
 
-        {/* Bottom Tab Navigation Bar (Visible in traveler mode) */}
-        {!isProviderMode && (
+        {/* Bottom Tab Navigation Bar (Visible in mobile traveler mode) */}
+        {!isProviderMode && !isDesktop && (
           <BottomTabBar
             activeTab={activeTab}
             onSelectTab={setActiveTab}
@@ -292,17 +299,21 @@ const styles = StyleSheet.create({
     display: 'flex',
     flexDirection: 'column',
     height: '100%' as any,
-    overflow: 'hidden' as any,
+    minHeight: '100vh' as any,
+    width: '100%',
   },
   contentArea: {
     flex: 1,
     backgroundColor: THEME.colors.background,
-    overflow: 'hidden' as any,
+    width: '100%',
     display: 'flex',
   },
   itineraryModalContainer: {
     flex: 1,
     backgroundColor: THEME.colors.background,
+    width: '100%',
+    height: '100%' as any,
+    minHeight: '100vh' as any,
   },
   itineraryModalHeader: {
     flexDirection: 'row',

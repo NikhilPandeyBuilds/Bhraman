@@ -1,6 +1,6 @@
 // Bhraman - Real Traveler Profile, Roles & Reputation View
 import React from 'react';
-import { View, Text, ScrollView, TouchableOpacity, StyleSheet, Image, Alert } from 'react-native';
+import { View, Text, ScrollView, TouchableOpacity, StyleSheet, Image, Alert, useWindowDimensions } from 'react-native';
 import { THEME } from '../../constants/theme';
 import { Ionicons } from '@expo/vector-icons';
 import { useApp } from '../../context/AppContext';
@@ -16,6 +16,9 @@ export const ProfileView: React.FC<ProfileViewProps> = ({
   onOpenAuthModal,
   savedPlanCount = 0,
 }) => {
+  const { width } = useWindowDimensions();
+  const isDesktop = width >= 860;
+
   const { 
     user, 
     logout, 
@@ -29,9 +32,16 @@ export const ProfileView: React.FC<ProfileViewProps> = ({
   const totalSavedCount = savedState.placeIds.length + savedState.discoveryIds.length + savedState.itineraries.length;
 
   return (
-    <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
-      {/* Real Profile Card */}
-      <View style={styles.profileCard}>
+    <ScrollView 
+      style={styles.container} 
+      contentContainerStyle={isDesktop ? styles.desktopScrollContent : undefined}
+      showsVerticalScrollIndicator={false}
+    >
+      <View style={isDesktop ? styles.desktopColumns : undefined}>
+        {/* Left Column on Desktop */}
+        <View style={isDesktop ? styles.leftColumn : undefined}>
+          {/* Real Profile Card */}
+          <View style={styles.profileCard}>
         <View style={styles.avatarRow}>
           {user?.avatarUrl ? (
             <Image source={{ uri: user.avatarUrl }} style={styles.avatarImage} />
@@ -161,7 +171,10 @@ export const ProfileView: React.FC<ProfileViewProps> = ({
         </View>
         <Ionicons name="chevron-forward" size={18} color={THEME.colors.textMuted} />
       </TouchableOpacity>
+      </View>
 
+      {/* Right Column on Desktop */}
+      <View style={isDesktop ? styles.rightColumn : undefined}>
       {/* Explorer Badges & Reputation */}
       <Text style={styles.sectionTitle}>EXPLORER BADGES & REPUTATION (VERIFIED)</Text>
       <View style={styles.badgesContainer}>
@@ -194,6 +207,8 @@ export const ProfileView: React.FC<ProfileViewProps> = ({
           Bhraman connects real local contributors with travelers. Discoveries you share contribute candidates to our time-based reachability engine.
         </Text>
       </View>
+      </View>
+      </View>
 
       <View style={{ height: 60 }} />
     </ScrollView>
@@ -206,6 +221,23 @@ const styles = StyleSheet.create({
     backgroundColor: THEME.colors.background,
     paddingHorizontal: THEME.spacing.md,
     paddingTop: THEME.spacing.sm,
+  },
+  desktopScrollContent: {
+    alignItems: 'center',
+    paddingVertical: THEME.spacing.md,
+  },
+  desktopColumns: {
+    flexDirection: 'row',
+    maxWidth: 1280,
+    width: '100%',
+    gap: 24,
+    alignItems: 'flex-start',
+  },
+  leftColumn: {
+    flex: 4.5,
+  },
+  rightColumn: {
+    flex: 5.5,
   },
   profileCard: {
     backgroundColor: THEME.colors.surface,

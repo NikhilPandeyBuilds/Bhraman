@@ -8,7 +8,8 @@ import {
   StyleSheet, 
   Modal, 
   ScrollView, 
-  Alert 
+  Alert,
+  useWindowDimensions 
 } from 'react-native';
 import { THEME } from '../../constants/theme';
 import { Ionicons } from '@expo/vector-icons';
@@ -27,6 +28,9 @@ export const AuthModal: React.FC<AuthModalProps> = ({
   onClose,
   initialMode = 'edit',
 }) => {
+  const { width } = useWindowDimensions();
+  const isDesktop = width >= 860;
+
   const { user, isAuthenticated, loginUser, signupUser, updateProfile } = useApp();
   const [mode, setMode] = useState<'login' | 'signup' | 'edit'>(initialMode);
 
@@ -92,8 +96,8 @@ export const AuthModal: React.FC<AuthModalProps> = ({
 
   return (
     <Modal visible={visible} animationType="slide" transparent onRequestClose={onClose}>
-      <View style={styles.modalOverlay}>
-        <View style={styles.modalCard}>
+      <View style={[styles.modalOverlay, isDesktop && styles.modalOverlayDesktop]}>
+        <View style={[styles.modalCard, isDesktop && styles.modalCardDesktop]}>
           {/* Modal Header */}
           <View style={styles.headerRow}>
             <View>
@@ -259,6 +263,11 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(0, 0, 0, 0.75)',
     justifyContent: 'flex-end',
   },
+  modalOverlayDesktop: {
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 24,
+  },
   modalCard: {
     backgroundColor: THEME.colors.surface,
     borderTopLeftRadius: 24,
@@ -267,6 +276,13 @@ const styles = StyleSheet.create({
     paddingBottom: 24,
     borderTopWidth: 1,
     borderTopColor: THEME.colors.surfaceBorder,
+  },
+  modalCardDesktop: {
+    maxWidth: 620,
+    width: '100%',
+    borderRadius: 24,
+    borderWidth: 1,
+    borderColor: THEME.colors.surfaceBorder,
   },
   headerRow: {
     flexDirection: 'row',

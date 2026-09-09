@@ -9,7 +9,8 @@ import {
   Modal, 
   ScrollView, 
   Image, 
-  Alert 
+  Alert,
+  useWindowDimensions 
 } from 'react-native';
 import { THEME } from '../../constants/theme';
 import { Ionicons } from '@expo/vector-icons';
@@ -26,6 +27,9 @@ export const CreateCommunityModal: React.FC<CreateCommunityModalProps> = ({
   visible,
   onClose,
 }) => {
+  const { width } = useWindowDimensions();
+  const isDesktop = width >= 860;
+
   const { createCommunity, activeLanguage, user } = useApp();
 
   const [name, setName] = useState('');
@@ -83,8 +87,8 @@ export const CreateCommunityModal: React.FC<CreateCommunityModalProps> = ({
 
   return (
     <Modal visible={visible} animationType="slide" transparent onRequestClose={onClose}>
-      <View style={styles.modalOverlay}>
-        <View style={styles.modalCard}>
+      <View style={[styles.modalOverlay, isDesktop && styles.modalOverlayDesktop]}>
+        <View style={[styles.modalCard, isDesktop && styles.modalCardDesktop]}>
           {/* Header */}
           <View style={styles.headerRow}>
             <View>
@@ -227,6 +231,11 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(0, 0, 0, 0.75)',
     justifyContent: 'flex-end',
   },
+  modalOverlayDesktop: {
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 24,
+  },
   modalCard: {
     backgroundColor: THEME.colors.surface,
     borderTopLeftRadius: 24,
@@ -235,6 +244,13 @@ const styles = StyleSheet.create({
     paddingBottom: 24,
     borderTopWidth: 1,
     borderTopColor: THEME.colors.surfaceBorder,
+  },
+  modalCardDesktop: {
+    maxWidth: 680,
+    width: '100%',
+    borderRadius: 24,
+    borderWidth: 1,
+    borderColor: THEME.colors.surfaceBorder,
   },
   headerRow: {
     flexDirection: 'row',

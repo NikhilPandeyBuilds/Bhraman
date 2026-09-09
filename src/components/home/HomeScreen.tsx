@@ -7,7 +7,8 @@ import {
   TouchableOpacity, 
   StyleSheet, 
   Image,
-  Alert 
+  Alert,
+  useWindowDimensions
 } from 'react-native';
 import { THEME } from '../../constants/theme';
 import { Ionicons } from '@expo/vector-icons';
@@ -37,6 +38,13 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
   onOpenSearch,
 }) => {
   const { activeLanguage, setLanguage, t } = useApp();
+  const { width } = useWindowDimensions();
+  const isDesktop = width >= 860;
+
+  const reachabilityRadiusKm = Math.round(
+    (constraints.availableMinutes / 60) * 
+    (constraints.transportMode === 'walk' ? 4.5 : constraints.transportMode === 'bicycle' ? 12 : constraints.transportMode === 'bike' ? 26 : constraints.transportMode === 'auto' ? 21 : 23) * 0.45 * 10
+  ) / 10;
 
   const timeOptions = [
     { label: '30 min', minutes: 30 },
@@ -90,51 +98,55 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
   };
 
   return (
-    <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
-      {/* Top Search Bar & Language Selector */}
-      <View style={styles.topControlRow}>
-        <TouchableOpacity
-          style={styles.searchBarBtn}
-          onPress={onOpenSearch}
-          activeOpacity={0.8}
-        >
-          <Ionicons name="search" size={16} color={THEME.colors.primary} />
-          <Text style={styles.searchBarPlaceholder}>
-            Search places, gems, communities, creators...
-          </Text>
-        </TouchableOpacity>
-      </View>
+    <ScrollView style={styles.container} contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
+      <View style={styles.innerContainer}>
+        {/* Top Search Bar & Language Selector */}
+        <View style={styles.topControlRow}>
+          <TouchableOpacity
+            style={styles.searchBarBtn}
+            onPress={onOpenSearch}
+            activeOpacity={0.8}
+          >
+            <Ionicons name="search" size={16} color={THEME.colors.primary} />
+            <Text style={styles.searchBarPlaceholder}>
+              Search places, gems, communities, creators...
+            </Text>
+          </TouchableOpacity>
+        </View>
 
-      {/* Language Quick Pills */}
-      <View style={styles.langSelectorRow}>
-        <Ionicons name="globe-outline" size={14} color={THEME.colors.secondary} />
-        <Text style={styles.langLabel}>Lang:</Text>
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.langScroll}>
-          {supportedLangs.map(l => (
-            <TouchableOpacity
-              key={l.code}
-              style={[styles.langPill, activeLanguage === l.code && styles.langPillActive]}
-              onPress={() => setLanguage(l.code)}
-              activeOpacity={0.7}
-            >
-              <Text style={[styles.langPillText, activeLanguage === l.code && styles.langPillTextActive]}>
-                {l.label}
+        {/* Language Quick Pills */}
+        <View style={styles.langSelectorRow}>
+          <Ionicons name="globe-outline" size={14} color={THEME.colors.secondary} />
+          <Text style={styles.langLabel}>Lang:</Text>
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.langScroll}>
+            {supportedLangs.map(l => (
+              <TouchableOpacity
+                key={l.code}
+                style={[styles.langPill, activeLanguage === l.code && styles.langPillActive]}
+                onPress={() => setLanguage(l.code)}
+                activeOpacity={0.7}
+              >
+                <Text style={[styles.langPillText, activeLanguage === l.code && styles.langPillTextActive]}>
+                  {l.label}
+                </Text>
+              </TouchableOpacity>
+            ))}
+          </ScrollView>
+        </View>
+
+        {/* Responsive Two-Column Layout on Desktop */}
+        <View style={[styles.mainLayout, isDesktop && styles.mainLayoutDesktop]}>
+          <View style={[styles.leftColumn, isDesktop && styles.leftColumnDesktop]}>
+            {/* Hero Section */}
+            <View style={styles.heroSection}>
+              <Text style={styles.heroPreTitle}>FROM PLACES → TO PLANS</Text>
+              <Text style={styles.heroHeadline}>Discover Beyond the Obvious</Text>
+              <Text style={styles.heroSubtitle}>
+                Tell us where you are, what you want, and how much time you have. We'll build what's realistically possible right now.
               </Text>
-            </TouchableOpacity>
-          ))}
-        </ScrollView>
-      </View>
 
-      {/* Hero Section */}
-      <View style={styles.heroSection}>
-        <Text style={styles.heroPreTitle}>FROM PLACES → TO PLANS</Text>
-        <Text style={styles.heroHeadline}>Discover Beyond the Obvious</Text>
-        <Text style={styles.heroSubtitle}>
-          Tell us where you are, what you want, and how much time you have. We'll build what's realistically possible right now.
-        </Text>
-
-        {/* DUAL VOICE / TEXT PROMINENT TRIGGER */}
-        <View style={styles.dualInputTriggerRow}>
+              {/* DUAL VOICE / TEXT PROMINENT TRIGGER */}
+              <View style={styles.dualInputTriggerRow}>
           <TouchableOpacity
             style={styles.voiceTriggerBtn}
             onPress={onOpenVoiceTextInput}
@@ -347,45 +359,151 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
           <Ionicons name="sparkles" size={18} color="#FFF" />
         </TouchableOpacity>
       </View>
+    </View>
 
-      {/* DISTINCT SPONSORED SECTION */}
-      <View style={styles.sponsoredSection}>
-        <View style={styles.sponsoredHeaderRow}>
-          <View>
-            <View style={styles.sponsoredBadgeRow}>
-              <View style={styles.sponsoredTag}>
-                <Text style={styles.sponsoredTagText}>SPONSORED</Text>
-              </View>
-              <Text style={styles.sponsoredSectionTitle}>Places Worth Knowing</Text>
+    {/* DESKTOP SIDEBAR WIDGETS */}
+    {isDesktop && (
+      <View style={styles.rightColumnDesktop}>
+        {/* Local Reachability Context Card */}
+        <View style={styles.desktopSidebarCard}>
+          <View style={styles.desktopCardHeader}>
+            <Ionicons name="map-outline" size={16} color={THEME.colors.primary} />
+            <Text style={styles.desktopCardTitle}>LOCAL REACHABILITY CONTEXT</Text>
+          </View>
+
+          <View style={styles.baseLocationBox}>
+            <Ionicons name="business" size={16} color={THEME.colors.primary} />
+            <View style={{ flex: 1 }}>
+              <Text style={styles.baseLocationSub}>Current Starting Base</Text>
+              <Text style={styles.baseLocationText}>{constraints.baseLocation.name}</Text>
             </View>
-            <Text style={styles.sponsoredDisclaimer}>
-              Paid placements clearly identified. Businesses can buy visibility; they cannot buy relevance.
+          </View>
+
+          <View style={styles.reachabilityStatsRow}>
+            <View style={styles.reachStatItem}>
+              <Text style={styles.reachStatNum}>~{reachabilityRadiusKm} km</Text>
+              <Text style={styles.reachStatLabel}>Isochrone Radius</Text>
+            </View>
+            <View style={styles.reachStatItem}>
+              <Text style={styles.reachStatNum}>{constraints.transportMode.toUpperCase()}</Text>
+              <Text style={styles.reachStatLabel}>Selected Mode</Text>
+            </View>
+            <View style={styles.reachStatItem}>
+              <Text style={styles.reachStatNum}>{constraints.minimumBufferMinutes}m</Text>
+              <Text style={styles.reachStatLabel}>Return Buffer</Text>
+            </View>
+          </View>
+
+          <View style={styles.returnGuaranteePill}>
+            <Ionicons name="shield-checkmark" size={14} color={THEME.colors.success} />
+            <Text style={styles.returnGuaranteeText}>
+              Guaranteed return to base calculated with safety buffer.
             </Text>
           </View>
         </View>
 
-        {sponsoredPlaces.map(spon => (
-          <TouchableOpacity
-            key={spon.id}
-            style={styles.sponsoredCard}
-            onPress={() => onSelectSponsoredPlace(spon)}
-            activeOpacity={0.8}
-          >
-            <Image source={{ uri: spon.imageUrl }} style={styles.sponImg} />
-            <View style={styles.sponContent}>
-              <View style={styles.sponBadgeRow}>
-                <Text style={styles.sponBadgeText}>SPONSORED PARTNER</Text>
-                <Text style={styles.sponRating}>★ {spon.rating}</Text>
-              </View>
-              <Text style={styles.sponName}>{spon.name}</Text>
-              <Text style={styles.sponDesc} numberOfLines={2}>{spon.description}</Text>
-              <Text style={styles.sponCost}>~₹{spon.averageCostPerPerson} • {spon.neighborhood}</Text>
+        {/* The Bhraman Difference Card */}
+        <View style={styles.desktopSidebarCard}>
+          <Text style={styles.desktopCardTitle}>THE BHRAMAN DIFFERENCE</Text>
+          <View style={styles.diffItem}>
+            <Text style={styles.diffEmoji}>⏱️</Text>
+            <View style={{ flex: 1 }}>
+              <Text style={styles.diffTitle}>From Places → To Plans</Text>
+              <Text style={styles.diffDesc}>Not an endless list of pins. A realistic, time-bounded sequential micro-itinerary.</Text>
             </View>
-          </TouchableOpacity>
-        ))}
+          </View>
+          <View style={styles.diffItem}>
+            <Text style={styles.diffEmoji}>🛡️</Text>
+            <View style={{ flex: 1 }}>
+              <Text style={styles.diffTitle}>Zero Stranded Risk</Text>
+              <Text style={styles.diffDesc}>Isochrone engine calculates transit times & traffic choke points so you always make it back.</Text>
+            </View>
+          </View>
+          <View style={styles.diffItem}>
+            <Text style={styles.diffEmoji}>💎</Text>
+            <View style={{ flex: 1 }}>
+              <Text style={styles.diffTitle}>Authentic Local Gems</Text>
+              <Text style={styles.diffDesc}>Curated by real Mumbai locals and neighborhood walks, without paid ranking bias.</Text>
+            </View>
+          </View>
+        </View>
+
+        {/* Sponsored Places in Desktop Sidebar */}
+        <View style={styles.desktopSidebarCard}>
+          <View style={styles.sponsoredBadgeRow}>
+            <View style={styles.sponsoredTag}>
+              <Text style={styles.sponsoredTagText}>SPONSORED</Text>
+            </View>
+            <Text style={styles.sponsoredSectionTitle}>Places Worth Knowing</Text>
+          </View>
+          <Text style={styles.sponsoredDisclaimer}>
+            Commercial placements clearly demarcated. Businesses cannot buy organic relevance.
+          </Text>
+
+          {sponsoredPlaces.map(spon => (
+            <TouchableOpacity
+              key={spon.id}
+              style={styles.sponsoredCardMini}
+              onPress={() => onSelectSponsoredPlace(spon)}
+              activeOpacity={0.8}
+            >
+              <Image source={{ uri: spon.imageUrl }} style={styles.sponImgMini} />
+              <View style={styles.sponContentMini}>
+                <View style={styles.sponMiniTop}>
+                  <Text style={styles.sponNameMini} numberOfLines={1}>{spon.name}</Text>
+                  <Text style={styles.sponRating}>★ {spon.rating}</Text>
+                </View>
+                <Text style={styles.sponDescMini} numberOfLines={1}>{spon.description}</Text>
+                <Text style={styles.sponCostMini}>~₹{spon.averageCostPerPerson} • {spon.neighborhood}</Text>
+              </View>
+            </TouchableOpacity>
+          ))}
+        </View>
+      </View>
+    )}
+  </View>
+
+  {/* DISTINCT SPONSORED SECTION (ON MOBILE ONLY) */}
+  {!isDesktop && (
+    <View style={styles.sponsoredSection}>
+      <View style={styles.sponsoredHeaderRow}>
+        <View>
+          <View style={styles.sponsoredBadgeRow}>
+            <View style={styles.sponsoredTag}>
+              <Text style={styles.sponsoredTagText}>SPONSORED</Text>
+            </View>
+            <Text style={styles.sponsoredSectionTitle}>Places Worth Knowing</Text>
+          </View>
+          <Text style={styles.sponsoredDisclaimer}>
+            Paid placements clearly identified. Businesses can buy visibility; they cannot buy relevance.
+          </Text>
+        </View>
       </View>
 
-      <View style={{ height: 70 }} />
+      {sponsoredPlaces.map(spon => (
+        <TouchableOpacity
+          key={spon.id}
+          style={styles.sponsoredCard}
+          onPress={() => onSelectSponsoredPlace(spon)}
+          activeOpacity={0.8}
+        >
+          <Image source={{ uri: spon.imageUrl }} style={styles.sponImg} />
+          <View style={styles.sponContent}>
+            <View style={styles.sponBadgeRow}>
+              <Text style={styles.sponBadgeText}>SPONSORED PARTNER</Text>
+              <Text style={styles.sponRating}>★ {spon.rating}</Text>
+            </View>
+            <Text style={styles.sponName}>{spon.name}</Text>
+            <Text style={styles.sponDesc} numberOfLines={2}>{spon.description}</Text>
+            <Text style={styles.sponCost}>~₹{spon.averageCostPerPerson} • {spon.neighborhood}</Text>
+          </View>
+        </TouchableOpacity>
+      ))}
+    </View>
+  )}
+
+        <View style={{ height: 70 }} />
+      </View>
     </ScrollView>
   );
 };
@@ -394,7 +512,159 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: THEME.colors.background,
+    width: '100%',
+  },
+  scrollContent: {
+    paddingBottom: 40,
+  },
+  innerContainer: {
+    width: '100%',
+    maxWidth: 1360,
+    alignSelf: 'center',
     paddingHorizontal: THEME.spacing.md,
+  },
+  mainLayout: {
+    width: '100%',
+  },
+  mainLayoutDesktop: {
+    flexDirection: 'row',
+    gap: 28,
+    alignItems: 'flex-start',
+  },
+  leftColumn: {
+    width: '100%',
+  },
+  leftColumnDesktop: {
+    flex: 1.15,
+    minWidth: 0,
+  },
+  rightColumnDesktop: {
+    width: 440,
+    flexShrink: 0,
+    gap: 16,
+    paddingTop: THEME.spacing.sm,
+  },
+  desktopSidebarCard: {
+    backgroundColor: THEME.colors.surface,
+    borderRadius: THEME.radius.lg,
+    padding: THEME.spacing.md,
+    borderWidth: 1,
+    borderColor: THEME.colors.surfaceBorder,
+    gap: 12,
+  },
+  desktopCardHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  desktopCardTitle: {
+    fontSize: 12,
+    fontWeight: '800',
+    color: THEME.colors.primary,
+    letterSpacing: 1,
+    textTransform: 'uppercase',
+  },
+  baseLocationSub: {
+    fontSize: 10,
+    color: THEME.colors.textMuted,
+    marginBottom: 2,
+  },
+  reachabilityStatsRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    backgroundColor: THEME.colors.background,
+    padding: 10,
+    borderRadius: THEME.radius.md,
+    borderWidth: 1,
+    borderColor: THEME.colors.surfaceBorder,
+  },
+  reachStatItem: {
+    alignItems: 'center',
+    flex: 1,
+  },
+  reachStatNum: {
+    fontSize: 14,
+    fontWeight: '800',
+    color: THEME.colors.textPrimary,
+  },
+  reachStatLabel: {
+    fontSize: 10,
+    color: THEME.colors.textMuted,
+    marginTop: 2,
+  },
+  returnGuaranteePill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    backgroundColor: 'rgba(16, 185, 129, 0.1)',
+    paddingHorizontal: 10,
+    paddingVertical: 8,
+    borderRadius: THEME.radius.md,
+  },
+  returnGuaranteeText: {
+    fontSize: 11,
+    color: THEME.colors.success,
+    fontWeight: '500',
+    flex: 1,
+  },
+  diffItem: {
+    flexDirection: 'row',
+    gap: 10,
+    alignItems: 'flex-start',
+  },
+  diffEmoji: {
+    fontSize: 18,
+    marginTop: 2,
+  },
+  diffTitle: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: THEME.colors.textPrimary,
+  },
+  diffDesc: {
+    fontSize: 11,
+    color: THEME.colors.textSecondary,
+    lineHeight: 16,
+    marginTop: 2,
+  },
+  sponsoredCardMini: {
+    flexDirection: 'row',
+    backgroundColor: THEME.colors.background,
+    borderRadius: THEME.radius.md,
+    overflow: 'hidden',
+    borderWidth: 1,
+    borderColor: THEME.colors.surfaceBorder,
+    marginTop: 8,
+  },
+  sponImgMini: {
+    width: 68,
+    height: 68,
+  },
+  sponContentMini: {
+    flex: 1,
+    padding: 8,
+    justifyContent: 'center',
+  },
+  sponMiniTop: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  sponNameMini: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: THEME.colors.textPrimary,
+    flex: 1,
+  },
+  sponDescMini: {
+    fontSize: 10,
+    color: THEME.colors.textSecondary,
+    marginTop: 2,
+  },
+  sponCostMini: {
+    fontSize: 10,
+    color: THEME.colors.textMuted,
+    marginTop: 2,
   },
   topControlRow: {
     paddingTop: THEME.spacing.sm,
